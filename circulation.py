@@ -109,8 +109,7 @@ class Circulation:
         return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
                 [1/(self.R2*self.C2), -(self.R1+self.R2)/self.C2*self.R1*self.R2, 0],
                 [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
-                [0, 0, 0, 0]
-
+                [0, 0, 0, 0]]
 
     def elastance(self, t):
         """
