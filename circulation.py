@@ -58,6 +58,9 @@ class Circulation:
         arterial_pressure = x[2]
         aortic_flow = x[3]
 
+        # filling phase occurs when x[1] > x[0]
+        # ejection phase pccurs when x[3] > 0 or x[0] > x[2]
+        # else isovolumic phase occurs
         if atrial_pressure > ventricular_pressure:
             A = self.filling_phase_dynamic_matrix(t)
         elif aortic_flow > 0 or ventricular_pressure > arterial_pressure:
@@ -101,6 +104,13 @@ class Circulation:
         """
         WRITE CODE HERE
         """
+        el = self.elastance(t)
+        del_dt = self.elastance_finite_difference(t)
+        return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
+                [1/(self.R2*self.C2), -(self.R1+self.R2)/self.C2*self.R1*self.R2, 0],
+                [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
+                [0, 0, 0, 0]
+
 
     def elastance(self, t):
         """
