@@ -31,7 +31,8 @@ class Circulation:
 
         :param HR: heart rate (beats per minute)
         """
-        self.HR = 75
+        self.HR = HR
+        HR = 75
         self.tc = 60/HR
         self.Tmax = .2+.15*self.tc # contraction time
 
