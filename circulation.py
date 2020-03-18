@@ -99,8 +99,8 @@ class Circulation:
         """
         el = self.elastance(t)
         del_dt = self.elastance_finite_difference(t)
-        return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
-                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.C2*self.R1*self.R2), 1/(self.C2*self.R1), 0],
+        return [[del_dt/el - el/self.R2, el/self.R2, 0, 0],
+                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.R1*self.R2*self.C2), 1/(self.R1*self.C2), 0],
                 [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
                 [0, 0, 0, 0]]
 
@@ -139,7 +139,7 @@ class Circulation:
         def f(t, x):
             return self.get_derivative(t,x)
 
-        sol = solve_ivp(f, time_dur, intial_cond, max_step=0.01)
+        sol = solve_ivp(f, time_dur, intial_cond, max_step=0.001)
         return sol.t, sol.y.T
 
     def _get_normalized_time(self, t):
@@ -176,6 +176,28 @@ def pressure_graphs(new_model, time, curr_state):
     plt.legend(loc='upper left')
     plt.show()
 
+def pressure_vol_graphs(new_model):
+
+    start = int(new_model.tc * 5 / 0.001)
+
+    time, curr_state = new_model.simulate(5)
+    plt.title('Pressure-Volume Loops of Few Cardiac Cycles')
+    plt.plot(new_model.left_ventricular_blood_vol(time[start:], curr_state[start:]), curr_state[start:, 0], 'r', label='Normal')
+
+    new_model.R1 = 2
+    time, curr_state = new_model.simulate(5)
+    plt.plot(new_model.left_ventricular_blood_vol(time[start:], curr_state[start:]), curr_state[start:, 0], 'g', label='High Systemic Resistance')
+
+    new_model.R1 = 0.5
+    new_model.R3 = 0.2
+    time, curr_state = new_model.simulate(5)
+    plt.plot(new_model.left_ventricular_blood_vol(time[start:], curr_state[start:]), curr_state[start:, 0], 'b', label='Aortic Stenosis')
+    
+    plt.xlabel('Pressure (mmHg)')
+    plt.ylabel('Volume (mL)')
+    plt.legend(loc='upper left')
+    plt.show()
+
 # Question 1
 new_model = Circulation(75, 2.0, 0.06)
 
@@ -185,3 +207,6 @@ pressure_graphs(new_model, t, x)
 
 # Question 3
 print('Left Ventricular Blood Volumes: {}'.format(new_model.left_ventricular_blood_vol(t, x)))
+
+# Question 4
+pressure_vol_graphs(new_model)
