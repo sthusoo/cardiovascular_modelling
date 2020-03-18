@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-
+import matplotlib.pyplot as plt
 
 class Circulation:
     """
@@ -11,8 +11,8 @@ class Circulation:
     def __init__(self, HR, Emax, Emin):
         self.set_heart_rate(HR)
 
-        self.Emin = 0.06
-        self.Emax = 2.0
+        self.Emin = Emin
+        self.Emax = Emax
         self.non_slack_blood_volume = 250 # ml
 
         self.R1 = 1.0 # between .5 and 2
@@ -28,11 +28,9 @@ class Circulation:
     def set_heart_rate(self, HR):
         """
         Sets several related variables together to ensure that they are consistent.
-
         :param HR: heart rate (beats per minute)
         """
         self.HR = HR
-        HR = 75
         self.tc = 60/HR
         self.Tmax = .2+.15*self.tc # contraction time
 
@@ -42,7 +40,6 @@ class Circulation:
         :param x: state variables [ventricular pressure; atrial pressure; arterial pressure; aortic flow]
         :return: time derivatives of state variables
         """
-
         """
         WRITE CODE HERE
         Implement this by deciding whether the model is in a filling, ejecting, or isovolumic phase and using 
@@ -70,7 +67,6 @@ class Circulation:
             A = self.isovolumic_phase_dynamic_matrix(t)
         
         return np.matmul(A, x)
-        
 
     def isovolumic_phase_dynamic_matrix(self, t):
         """
@@ -101,14 +97,10 @@ class Circulation:
         :param t: time (s)
         :return: A matrix for filling phase
         """
-
-        """
-        WRITE CODE HERE
-        """
         el = self.elastance(t)
         del_dt = self.elastance_finite_difference(t)
-        return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
-                [1/(self.R2*self.C2), -(self.R1+self.R2)/self.C2*self.R1*self.R2, 0],
+        return [[del_dt/el - el/self.R2, el/self.R2, 0, 0],
+                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.R1*self.R2*self.C2), 1/(self.R1*self.C2), 0],
                 [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
                 [0, 0, 0, 0]]
 
@@ -125,7 +117,6 @@ class Circulation:
         """
         Calculates finite-difference approximation of elastance derivative. In class I showed another method
         that calculated the derivative analytically, but I've removed it to keep things simple.
-
         :param t: time (needed because elastance is a function of time)
         :return: finite-difference approximation of time derivative of time-varying elastance
         """
@@ -141,11 +132,15 @@ class Circulation:
         :param total_time: seconds to simulate
         :return: time, state (times at which the state is estimated, state vector at each time)
         """
+        # Start the simulation with all the blood in the atrium
+        intial_cond = [0, self.non_slack_blood_volume/self.C2, 0, 0]
+        time_dur = (0, total_time)
 
-        """
-        WRITE CODE HERE
-        Put all the blood pressure in the atria as an initial condition.
-        """
+        def f(t, x):
+            return self.get_derivative(t,x)
+
+        sol = solve_ivp(f, time_dur, intial_cond, max_step=0.01)
+        return sol.t, sol.y.T
 
     def _get_normalized_time(self, t):
         """
@@ -153,3 +148,40 @@ class Circulation:
         :return: time normalized to self.Tmax (duration of ventricular contraction)
         """
         return (t % self.tc) / self.Tmax
+
+    # Question 3 Method Definition
+    def left_ventricular_blood_vol(self, t, x):
+        """
+        :param t: time
+        :param x: state variables [ventricular pressure; atrial pressure; arterial pressure; aortic flow]
+        :return: left ventricular blood volume
+        """
+        # Assumption stated in assignment: Slack Volume is 20mL
+        slack_vol = 20
+        ventricular_pressure = x[:,0]
+        blood_vol = ventricular_pressure / self.elastance(t) + slack_vol
+        return blood_vol
+
+
+def pressure_graphs(new_model, time, curr_state):
+    aortic_press = curr_state[:, 2] + curr_state[:, 3] * new_model.R4
+
+    plt.title('State of Circulation over Time')
+    plt.plot(time, curr_state[:, 0], 'r', label='Ventricular Pressure')
+    plt.plot(time, curr_state[:, 1], 'g', label='Atrial Pressure')
+    plt.plot(time, curr_state[:, 2], 'b', label='Arterial Pressure')
+    plt.plot(time, aortic_press, 'c', label='Aortic Pressure')
+    plt.xlabel('Time (s)')
+    plt.ylabel('State')
+    plt.legend(loc='upper left')
+    plt.show()
+
+# Question 1
+new_model = Circulation(75, 2.0, 0.06)
+
+# Question 2    
+t, x = new_model.simulate(5)
+pressure_graphs(new_model, t, x)
+
+# Question 3
+print('Left Ventricular Blood Volumes: {}'.format(new_model.left_ventricular_blood_vol(t, x)))
