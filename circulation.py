@@ -99,8 +99,8 @@ class Circulation:
         """
         el = self.elastance(t)
         del_dt = self.elastance_finite_difference(t)
-        return [[del_dt/el - el/self.R2, el/self.R2, 0, 0],
-                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.R1*self.R2*self.C2), 1/(self.R1*self.C2), 0],
+        return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
+                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.C2*self.R1*self.R2), 1/(self.C2*self.R1), 0],
                 [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
                 [0, 0, 0, 0]]
 
