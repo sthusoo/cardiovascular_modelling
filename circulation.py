@@ -196,8 +196,8 @@ def pressure_vol_graphs(new_model):
     time, curr_state = new_model.simulate(5)
     plt.plot(new_model.left_ventricular_blood_vol(time[start:], curr_state[start:]), curr_state[start:, 0], 'b', label='Aortic Stenosis')
     
-    plt.xlabel('Pressure (mmHg)')
-    plt.ylabel('Volume (mL)')
+    plt.xlabel('Ventricular Volume (mL)')
+    plt.ylabel('Ventricular Pressure (mmHg)')
     plt.legend(loc='upper left')
     plt.show()
 
