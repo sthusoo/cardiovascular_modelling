@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+# code to print non-truncated version of blood volumes
+# import sys
+# np.set_printoptions(threshold=sys.maxsize)
 
 class Circulation:
     """
@@ -14,7 +17,7 @@ class Circulation:
         self.Emin = Emin
         self.Emax = Emax
         self.non_slack_blood_volume = 250 # ml
-
+        #slack is what is left, non slack is what is gone
         self.R1 = 1.0 # between .5 and 2
         self.R2 = .005
         self.R3 = .001
@@ -99,8 +102,8 @@ class Circulation:
         """
         el = self.elastance(t)
         del_dt = self.elastance_finite_difference(t)
-        return [[del_dt/el - el/self.R2, el/self.R2, 0, 0],
-                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.R1*self.R2*self.C2), 1/(self.R1*self.C2), 0],
+        return [[del_dt/el-el/self.R2, el/self.R2, 0, 0],
+                [1/(self.R2*self.C2), -(self.R1+self.R2)/(self.C2*self.R1*self.R2), 1/(self.R1*self.C2), 0],
                 [0, 1/(self.R1*self.C3), -1/(self.R1*self.C3), 0],
                 [0, 0, 0, 0]]
 
@@ -133,14 +136,14 @@ class Circulation:
         :return: time, state (times at which the state is estimated, state vector at each time)
         """
         # Start the simulation with all the blood in the atrium
-        intial_cond = [0, self.non_slack_blood_volume/self.C2, 0, 0]
+        intial_cond = [0, self.non_slack_blood_volume/self.C2, 0, 0] #compliance(C2) = P/V
         time_dur = (0, total_time)
 
         def f(t, x):
-            return self.get_derivative(t,x)
+            return self.get_derivative(t,x) # to output the matrix corresponding to specific phase of circulation
 
         sol = solve_ivp(f, time_dur, intial_cond, max_step=0.001)
-        return sol.t, sol.y.T
+        return sol.t, sol.y.T # return to input into plotting function
 
     def _get_normalized_time(self, t):
         """
@@ -164,7 +167,7 @@ class Circulation:
 
 
 def pressure_graphs(new_model, time, curr_state):
-    aortic_press = curr_state[:, 2] + curr_state[:, 3] * new_model.R4
+    aortic_press = curr_state[:, 2] + curr_state[:, 3] * new_model.R4 # calcuation of aortic pressure between D2 and R4
 
     plt.title('State of Circulation over Time')
     plt.plot(time, curr_state[:, 0], 'r', label='Ventricular Pressure')
@@ -178,7 +181,7 @@ def pressure_graphs(new_model, time, curr_state):
 
 def pressure_vol_graphs(new_model):
 
-    start = int(new_model.tc * 5 / 0.001)
+    start = int(new_model.tc * 5 / 0.001) # in order to start after first 5 cycles 
 
     time, curr_state = new_model.simulate(5)
     plt.title('Pressure-Volume Loops of Few Cardiac Cycles')
